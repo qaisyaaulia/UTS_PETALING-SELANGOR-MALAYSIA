@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Peta Tematik Petaling - Qaisya Aulia Maharani</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/leaflet-minimap/3.6.1/Control.MiniMap.min.css" />
+
+    <style>
+        :root {
+            --primary: #1a1a2e;
+            --secondary: #16213e;
+            --bg-light: #f8f9fa;
+            --border: #dee2e6;
+            --edu: #2196F3;
+            --health: #F44336;
+            --fin: #4CAF50;
+            --loc: #FF9800;
+        }
+
+        body {
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            background: var(--bg-light);
+        }
+
+        /* SIDEBAR */
+        #sidebar {
+            width: 320px;
+            background: white;
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            z-index: 2000;
+        }
+
+        .sidebar-header {
+            padding: 25px 20px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+        }
+
+        .sidebar-header h3 {
+            margin: 0;
+            font-size: 18px;
+        }
+
+        .sidebar-header p {
+            margin: 5px 0 0;
+            font-size: 11px;
+            opacity: 0.7;
+        }
+
+        .sidebar-content {
+            padding: 20px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 12px;
+            border: 1.5px solid var(--border);
+            border-radius: 8px;
+            box-sizing: border-box;
+            margin-bottom: 15px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 12px;
+            margin-bottom: 8px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .stat-indicator {
+            width: 4px;
+            height: 30px;
+            border-radius: 2px;
+        }
+
+        .stat-info span {
+            display: block;
+            font-size: 10px;
+            color: #888;
+        }
+
+        .stat-info b {
+            font-size: 15px;
+        }
+
+        /* MAP */
+        #map-container {
+            flex: 1;
+            position: relative;
+        }
+
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+
+        #loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            z-index: 3000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .spinner {
+            width: 30px;
+            height: 30px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--edu);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .btn-fit {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .footer {
+            padding: 15px;
+            font-size: 10px;
+            text-align: center;
+            color: #999;
+            border-top: 1px solid var(--border);
+        }
+    </style>
+</head>
+
+<body>
+
+    <aside id="sidebar">
+        <div class="sidebar-header">
+            <h3>Peta Tematik Petaling</h3>
+            <p>Sistem Informasi Geografis</p>
+        </div>
+
+        <div class="sidebar-content">
+            <input type="text" id="search" class="search-box" placeholder="Cari fasilitas...">
+            <div id="search-results" style="max-height: 200px; overflow-y: auto;"></div>
+
+            <h4>STATISTIK DATA</h4>
+            <div class="stat-card">
+                <div class="stat-indicator" style="background: var(--edu)"></div>
+                <div class="stat-info"><span>Pendidikan</span><b id="count-edu">0</b></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-indicator" style="background: var(--health)"></div>
+                <div class="stat-info"><span>Kesehatan</span><b id="count-health">0</b></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-indicator" style="background: var(--fin)"></div>
+                <div class="stat-info"><span>Finansial</span><b id="count-fin">0</b></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-indicator" style="background: var(--loc)"></div>
+                <div class="stat-info"><span>Lokalitas (Area)</span><b id="count-loc">0</b></div>
+            </div>
+
+            <button class="btn-fit" onclick="fitMap()">Reset Tampilan Peta</button>
+
+            <div class="footer">
+                <b>Dibuat oleh: Qaisya Aulia Maharani</b><br>
+                Sumber: OpenStreetMap Contributors
+            </div>
+        </div>
+    </aside>
+
+    <main id="map-container">
+        <div id="loading-overlay">
+            <div class="spinner"></div>
+            <p>Sinkronisasi Batas Wilayah...</p>
+        </div>
+        <div id="map"></div>
+    </main>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-minimap/3.6.1/Control.MiniMap.min.js"></script>
+
+    <script>
+        const map = L.map('map', { zoomControl: false }).setView([3.126, 101.59], 12);
+        L.control.zoom({ position: 'topright' }).addTo(map);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+        const layers = {
+            border: L.layerGroup(), // Layer khusus untuk garis batas
+            education: L.layerGroup(),
+            healthcare: L.layerGroup(),
+            financial: L.layerGroup(),
+            localities: L.layerGroup()
+        };
+
+        const COLORS = { education: '#2196F3', healthcare: '#F44336', financial: '#4CAF50', localities: '#FF9800' };
+        const LABELS = { education: 'Pendidikan', healthcare: 'Kesehatan', financial: 'Finansial', localities: 'Lokalitas' };
+        let searchIndex = [];
+
+        // Fungsi Load Data
+        async function loadData(cat, folderName, fileName, isPolygon = false) {
+            try {
+                const path = `${encodeURIComponent(folderName)}/${fileName}.geojson`;
+                const response = await fetch(path);
+                if (!response.ok) throw new Error("File tidak ditemukan");
+
+                const data = await response.json();
+
+                // Update Statistik (Kecuali untuk border)
+                const statIdMap = { education: 'edu', healthcare: 'health', financial: 'fin', localities: 'loc' };
+                if (statIdMap[cat]) {
+                    document.getElementById(`count-${statIdMap[cat]}`).innerText = data.features ? data.features.length : 0;
+                }
+
+                L.geoJSON(data, {
+                    style: () => {
+                        if (cat === 'border') {
+                            return {
+                                color: '#333',     // Warna garis batas (Hitam tua/Abu-abu gelap)
+                                weight: 4,         // Ketebalan garis
+                                dashArray: '5, 10', // Garis putus-putus biar estetik
+                                fillOpacity: 0,    // Tengahnya kosong biar gak nutupin data
+                                interactive: false // Biar gak bisa diklik (hanya dekorasi)
+                            };
+                        }
+                        return {
+                            color: COLORS[cat],
+                            weight: isPolygon ? 2 : 2,
+                            fillOpacity: isPolygon ? 0.3 : 0.9,
+                            fillColor: COLORS[cat]
+                        };
+                    },
+                    pointToLayer: (feature, latlng) => {
+                        return L.circleMarker(latlng, {
+                            radius: 6, fillColor: COLORS[cat], color: "#fff", weight: 1, fillOpacity: 0.9
+                        });
+                    },
+                    onEachFeature: (feature, layer) => {
+                        if (cat === 'border') return; // Border tidak perlu popup
+
+                        let popup = `<strong>${LABELS[cat]}</strong><hr>`;
+                        if (feature.properties) {
+                            Object.keys(feature.properties).slice(0, 5).forEach(key => {
+                                popup += `<small><b>${key}:</b> ${feature.properties[key]}</small><br>`;
+                            });
+                        }
+                        layer.bindPopup(popup);
+
+                        const name = feature.properties.name || Object.values(feature.properties)[0] || "Tanpa Nama";
+                        searchIndex.push({ name: String(name), layer: layer, cat: LABELS[cat] });
+                    }
+                }).addTo(layers[cat]);
+
+                layers[cat].addTo(map);
+
+                // Posisikan border di paling bawah agar tidak menghalangi klik
+                if (cat === 'border') layers[cat].eachLayer(l => l.bringToBack());
+
+            } catch (e) {
+                console.warn(`! Gagal memuat ${cat}:`, e.message);
+            }
+        }
+
+        Promise.all([
+            // Memanggil file border (pakai file clipping_boundary kamu)
+            loadData('border', 'localities petaling', 'clipping_boundary', true),
+
+            // Memanggil data tematik
+            loadData('education', 'education', 'education'),
+            loadData('healthcare', 'healthcare petaling', 'healthcare.petaling'),
+            loadData('financial', 'Financial petaling', 'Financial.petaling'),
+            loadData('localities', 'localities petaling', 'localities.petaling', true)
+        ]).then(() => {
+            document.getElementById('loading-overlay').style.display = 'none';
+
+            // Kontrol Layer (Border dimasukkan agar bisa dinyalakan/dimatikan)
+            L.control.layers(null, {
+                "<b>Batas Wilayah</b>": layers.border,
+                "Pendidikan": layers.education,
+                "Kesehatan": layers.healthcare,
+                "Finansial": layers.financial,
+                "Lokalitas": layers.localities
+            }, { collapsed: false, position: 'topright' }).addTo(map);
+
+            fitMap();
+        });
+
+        function fitMap() {
+            const activeData = [];
+            Object.keys(layers).forEach(key => {
+                if (key !== 'border' && map.hasLayer(layers[key])) { // Fokus ke data tematik saja saat reset
+                    layers[key].eachLayer(layer => activeData.push(layer));
+                }
+            });
+
+            if (activeData.length > 0) {
+                const featureGroup = L.featureGroup(activeData);
+                map.fitBounds(featureGroup.getBounds(), { padding: [50, 50], animate: true });
+            } else {
+                map.setView([3.126, 101.59], 12);
+            }
+        }
+
+        // Search Logic
+        document.getElementById('search').addEventListener('input', function (e) {
+            const val = e.target.value.toLowerCase();
+            const resDiv = document.getElementById('search-results');
+            resDiv.innerHTML = '';
+            if (val.length < 2) return;
+            searchIndex.filter(i => i.name.toLowerCase().includes(val)).slice(0, 5).forEach(m => {
+                const item = document.createElement('div');
+                item.style = "padding:8px; cursor:pointer; border-bottom:1px solid #eee; font-size:12px; background:white;";
+                item.innerHTML = `<b>${m.name}</b><br><small>${m.cat}</small>`;
+                item.onclick = () => {
+                    if (m.layer.getBounds) map.fitBounds(m.layer.getBounds());
+                    else map.setView(m.layer.getLatLng(), 16);
+                    m.layer.openPopup();
+                };
+                resDiv.appendChild(item);
+            });
+        });
+    </script>
+</body>
+
+</html>
