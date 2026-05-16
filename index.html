@@ -163,6 +163,22 @@
             color: #999;
             border-top: 1px solid var(--border);
         }
+
+        /* POPUP STYLING */
+        .leaflet-popup-content-wrapper {
+            border-radius: 12px;
+            padding: 5px;
+        }
+
+        .custom-popup b {
+            color: #333;
+            font-size: 14px;
+        }
+
+        .custom-popup small {
+            color: #666;
+            line-height: 1.4;
+        }
     </style>
 </head>
 
@@ -176,7 +192,7 @@
 
         <div class="sidebar-content">
             <input type="text" id="search" class="search-box" placeholder="Cari fasilitas...">
-            <div id="search-results" style="max-height: 200px; overflow-y: auto;"></div>
+            <div id="search-results" style="max-height: 200px; overflow-y: auto; margin-bottom: 10px;"></div>
 
             <h4>STATISTIK DATA</h4>
             <div class="stat-card">
@@ -220,10 +236,12 @@
         const map = L.map('map', { zoomControl: false }).setView([3.126, 101.59], 12);
         L.control.zoom({ position: 'topright' }).addTo(map);
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
 
         const layers = {
-            border: L.layerGroup(), // Layer khusus untuk garis batas
+            border: L.layerGroup(),
             education: L.layerGroup(),
             healthcare: L.layerGroup(),
             financial: L.layerGroup(),
@@ -234,7 +252,6 @@
         const LABELS = { education: 'Pendidikan', healthcare: 'Kesehatan', financial: 'Finansial', localities: 'Lokalitas' };
         let searchIndex = [];
 
-        // Fungsi Load Data
         async function loadData(cat, folderName, fileName, isPolygon = false) {
             try {
                 const path = `${encodeURIComponent(folderName)}/${fileName}.geojson`;
@@ -243,7 +260,7 @@
 
                 const data = await response.json();
 
-                // Update Statistik (Kecuali untuk border)
+                // Update Statistik
                 const statIdMap = { education: 'edu', healthcare: 'health', financial: 'fin', localities: 'loc' };
                 if (statIdMap[cat]) {
                     document.getElementById(`count-${statIdMap[cat]}`).innerText = data.features ? data.features.length : 0;
@@ -252,17 +269,11 @@
                 L.geoJSON(data, {
                     style: () => {
                         if (cat === 'border') {
-                            return {
-                                color: '#333',     // Warna garis batas (Hitam tua/Abu-abu gelap)
-                                weight: 4,         // Ketebalan garis
-                                dashArray: '5, 10', // Garis putus-putus biar estetik
-                                fillOpacity: 0,    // Tengahnya kosong biar gak nutupin data
-                                interactive: false // Biar gak bisa diklik (hanya dekorasi)
-                            };
+                            return { color: '#333', weight: 4, dashArray: '5, 10', fillOpacity: 0, interactive: false };
                         }
                         return {
                             color: COLORS[cat],
-                            weight: isPolygon ? 2 : 2,
+                            weight: 2,
                             fillOpacity: isPolygon ? 0.3 : 0.9,
                             fillColor: COLORS[cat]
                         };
@@ -273,24 +284,43 @@
                         });
                     },
                     onEachFeature: (feature, layer) => {
-                        if (cat === 'border') return; // Border tidak perlu popup
+                        if (cat === 'border') return;
 
-                        let popup = `<strong>${LABELS[cat]}</strong><hr>`;
-                        if (feature.properties) {
-                            Object.keys(feature.properties).slice(0, 5).forEach(key => {
-                                popup += `<small><b>${key}:</b> ${feature.properties[key]}</small><br>`;
-                            });
-                        }
-                        layer.bindPopup(popup);
+                        const props = feature.properties;
 
-                        const name = feature.properties.name || Object.values(feature.properties)[0] || "Tanpa Nama";
-                        searchIndex.push({ name: String(name), layer: layer, cat: LABELS[cat] });
+                        // Logika Penamaan Fasilitas
+                        const placeName = props.name || props.amenity || props.shop || "Fasilitas Tanpa Nama";
+
+                        // Membuat Popup HTML yang bersih
+                        let popupContent = `
+                            <div class="custom-popup" style="min-width: 160px;">
+                                <strong style="color: ${COLORS[cat]}; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">${LABELS[cat]}</strong>
+                                <hr style="margin: 8px 0; border: 0; border-top: 1px solid #eee;">
+                                <b style="display: block; margin-bottom: 5px;">${placeName}</b>
+                        `;
+
+                        if (props.healthcare && props.healthcare !== "null")
+                            popupContent += `<small><b>Tipe:</b> ${props.healthcare}</small><br>`;
+
+                        if (props.opening_hours && props.opening_hours !== "null")
+                            popupContent += `<small><b>Jam Buka:</b> ${props.opening_hours}</small><br>`;
+
+                        if (props['addr:street'] && props['addr:street'] !== "null")
+                            popupContent += `<small><b>Alamat:</b> ${props['addr:street']}</small><br>`;
+
+                        popupContent += `</div>`;
+
+                        layer.bindPopup(popupContent);
+
+                        searchIndex.push({
+                            name: String(placeName),
+                            layer: layer,
+                            cat: LABELS[cat]
+                        });
                     }
                 }).addTo(layers[cat]);
 
                 layers[cat].addTo(map);
-
-                // Posisikan border di paling bawah agar tidak menghalangi klik
                 if (cat === 'border') layers[cat].eachLayer(l => l.bringToBack());
 
             } catch (e) {
@@ -299,10 +329,7 @@
         }
 
         Promise.all([
-            // Memanggil file border (pakai file clipping_boundary kamu)
             loadData('border', 'localities petaling', 'clipping_boundary', true),
-
-            // Memanggil data tematik
             loadData('education', 'education', 'education'),
             loadData('healthcare', 'healthcare petaling', 'healthcare.petaling'),
             loadData('financial', 'Financial petaling', 'Financial.petaling'),
@@ -310,7 +337,6 @@
         ]).then(() => {
             document.getElementById('loading-overlay').style.display = 'none';
 
-            // Kontrol Layer (Border dimasukkan agar bisa dinyalakan/dimatikan)
             L.control.layers(null, {
                 "<b>Batas Wilayah</b>": layers.border,
                 "Pendidikan": layers.education,
@@ -325,7 +351,7 @@
         function fitMap() {
             const activeData = [];
             Object.keys(layers).forEach(key => {
-                if (key !== 'border' && map.hasLayer(layers[key])) { // Fokus ke data tematik saja saat reset
+                if (key !== 'border' && map.hasLayer(layers[key])) {
                     layers[key].eachLayer(layer => activeData.push(layer));
                 }
             });
@@ -344,10 +370,13 @@
             const resDiv = document.getElementById('search-results');
             resDiv.innerHTML = '';
             if (val.length < 2) return;
+
             searchIndex.filter(i => i.name.toLowerCase().includes(val)).slice(0, 5).forEach(m => {
                 const item = document.createElement('div');
-                item.style = "padding:8px; cursor:pointer; border-bottom:1px solid #eee; font-size:12px; background:white;";
-                item.innerHTML = `<b>${m.name}</b><br><small>${m.cat}</small>`;
+                item.style = "padding:10px; cursor:pointer; border-bottom:1px solid #eee; font-size:12px; background:white; transition: 0.2s;";
+                item.onmouseover = () => item.style.background = "#f0f0f0";
+                item.onmouseout = () => item.style.background = "white";
+                item.innerHTML = `<b>${m.name}</b><br><small style="color:#666">${m.cat}</small>`;
                 item.onclick = () => {
                     if (m.layer.getBounds) map.fitBounds(m.layer.getBounds());
                     else map.setView(m.layer.getLatLng(), 16);
