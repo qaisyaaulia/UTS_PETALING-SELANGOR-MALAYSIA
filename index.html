@@ -4,210 +4,1388 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Peta Tematik Petaling - Qaisya Aulia Maharani</title>
+    <title>Peta Tematik Petaling</title>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         :root {
-            --primary: #1a1a2e;
-            --secondary: #16213e;
-            --bg-light: #f8f9fa;
-            --border: #dee2e6;
-            --edu: #2196F3;
-            --health: #F44336;
-            --fin: #4CAF50;
-            --loc: #FF9800;
+            --primary: #FFB6C1;
+            /* Baby pink */
+            --primary-dark: #FF9FB0;
+            --secondary: #FFE4E1;
+            /* Misty rose */
+            --text-main: #2D3748;
+            --text-light: #718096;
+            --bg-light: #FAFAFA;
+            --edu: #FFB6C1;
+            --health: #9F7AEA;
+            /* Soft purple */
+            --fin: #48BB78;
+            /* Soft green */
+            --loc: #F6AD55;
+            /* Soft orange */
+            --border: #edf2f7;
         }
 
         body {
             margin: 0;
-            display: flex;
-            height: 100vh;
-            font-family: 'Inter', sans-serif;
+            padding: 0;
+            font-family: 'Outfit', sans-serif;
             overflow: hidden;
-            background: var(--bg-light);
+            background: #e2e8f0;
+            color: var(--text-main);
         }
 
-        #sidebar {
-            width: 320px;
-            background: white;
-            border-right: 1px solid var(--border);
+        /* Intro Screen */
+        #intro-screen {
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(circle at 15% 20%, rgba(255, 245, 204, 0.8) 0%, transparent 40%),
+                radial-gradient(circle at 20% 50%, rgba(255, 209, 220, 0.8) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(212, 241, 244, 0.8) 0%, transparent 50%),
+                #FFFFFF;
+            z-index: 9999;
             display: flex;
             flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 1s ease-out, transform 1s ease-out;
+            padding: 40px;
+        }
+
+        .intro-title {
+            font-size: 38px;
+            font-weight: 800;
+            color: var(--text-main);
+            margin: 0;
+            opacity: 0;
+            transform: translateY(-30px);
+            animation: fadeDown 1s ease-out 0.5s forwards;
+            text-align: center;
+            line-height: 1.3;
+            max-width: 900px;
+            z-index: 2;
+        }
+
+        .intro-title.fade-out,
+        .intro-footer.fade-out {
+            opacity: 0 !important;
+            transform: translateY(-20px) scale(0.9);
+            transition: all 0.6s ease-in;
+            pointer-events: none;
+        }
+
+        /* Cloud Transition System */
+        #cloud-transition {
+            position: fixed;
+            inset: 0;
+            z-index: 99999;
+            pointer-events: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            visibility: hidden;
+            overflow: hidden;
+        }
+
+        .cloud-part {
+            position: absolute;
+            background: radial-gradient(circle, #ffffff 0%, rgba(255, 255, 255, 0.9) 60%, rgba(255, 255, 255, 0) 100%);
+            border-radius: 50%;
+            filter: blur(40px);
+            opacity: 0;
+            transform: scale(0.1);
+        }
+
+        .c1 {
+            width: 80vw;
+            height: 80vw;
+            left: -20vw;
+            top: -10vh;
+        }
+
+        .c2 {
+            width: 100vw;
+            height: 100vw;
+            right: -30vw;
+            top: 20vh;
+        }
+
+        .c3 {
+            width: 90vw;
+            height: 90vw;
+            left: 10vw;
+            bottom: -20vh;
+        }
+
+        .c4 {
+            width: 70vw;
+            height: 70vw;
+            right: 10vw;
+            top: -30vh;
+        }
+
+        .c5 {
+            width: 120vw;
+            height: 120vw;
+            left: 30vw;
+            top: 10vh;
+        }
+
+        #cloud-transition.engulf .cloud-part {
+            opacity: 1;
+            transform: scale(2.5);
+            transition: all 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        #cloud-transition.open-up .cloud-part {
+            opacity: 0;
+            transform: scale(5);
+            transition: all 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .intro-title .highlight {
+            background: linear-gradient(120deg, #E91E63, #880E4F);
+            /* High contrast deep pink */
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 2px 4px rgba(233, 30, 99, 0.2);
+        }
+
+        .globe-container {
+            width: 350px;
+            height: 350px;
+            position: relative;
+            margin: 40px 0;
+            z-index: 10;
+            perspective: 1200px;
+            pointer-events: none;
+            /* Let clicks pass through empty spaces */
+        }
+
+        .globe-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            transform: translateY(100vh);
+            animation: slideUpSystem 1.5s cubic-bezier(0.25, 1, 0.5, 1) 0.5s forwards;
+        }
+
+        @keyframes slideUpSystem {
+            to {
+                transform: translateY(0) rotateX(-10deg);
+            }
+        }
+
+        .orbit-ring {
+            position: absolute;
+            inset: 0;
+            transform-style: preserve-3d;
+            animation: orbitSpinY 40s linear infinite;
+        }
+
+        @keyframes orbitSpinY {
+            0% {
+                transform: rotateY(0deg);
+            }
+
+            100% {
+                transform: rotateY(360deg);
+            }
+        }
+
+        .orbit-item {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 90px;
+            height: 90px;
+            margin-top: -45px;
+            margin-left: -45px;
+            border-radius: 15px;
+            transform-style: preserve-3d;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            pointer-events: auto;
+            /* Ensure photos are clickable */
+        }
+
+        .orbit-item .photo {
+            width: 100%;
+            height: 100%;
+            border-radius: 15px;
+            background-size: cover;
+            background-position: center;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+            border: 3px solid white;
+            transition: all 0.4s ease;
+            position: relative;
+            z-index: 2;
+        }
+
+        .orbit-item .info {
+            position: absolute;
+            top: 50%;
+            left: 100%;
+            transform: translateY(-50%);
+            margin-left: 15px;
+            width: 0;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(233, 30, 99, 0.3);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            opacity: 0;
+            transition: all 0.4s ease;
+            pointer-events: none;
+            white-space: normal;
+        }
+
+        .orbit-item.expanded .info {
+            width: 180px;
+            opacity: 1;
+            padding: 10px 15px;
+            pointer-events: auto;
+        }
+
+        .orbit-item.expanded .photo {
+            transform: scale(1.3);
+            box-shadow: 0 15px 30px rgba(233, 30, 99, 0.4);
+            border-color: var(--primary);
+        }
+
+        .orbit-item .info h4 {
+            margin: 0 0 5px 0;
+            font-size: 14px;
+            color: #880E4F;
+            line-height: 1.2;
+            font-weight: 800;
+        }
+
+        .orbit-item .info p {
+            margin: 0;
+            font-size: 11px;
+            color: var(--text-light);
+            line-height: 1.3;
+        }
+
+        .item1 {
+            transform: rotateY(0deg) translateZ(260px);
+        }
+
+        .item2 {
+            transform: rotateY(45deg) translateZ(260px);
+        }
+
+        .item3 {
+            transform: rotateY(90deg) translateZ(260px);
+        }
+
+        .item4 {
+            transform: rotateY(135deg) translateZ(260px);
+        }
+
+        .item5 {
+            transform: rotateY(180deg) translateZ(260px);
+        }
+
+        .item6 {
+            transform: rotateY(225deg) translateZ(260px);
+        }
+
+        .item7 {
+            transform: rotateY(270deg) translateZ(260px);
+        }
+
+        .item8 {
+            transform: rotateY(315deg) translateZ(260px);
+        }
+
+        .globe {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: url('https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-blue-marble.jpg') repeat-x;
+            background-size: auto 100%;
+            box-shadow:
+                inset -40px -40px 80px rgba(0, 0, 0, 0.9),
+                /* Sisi gelap yang lebih kuat (efek 3D) */
+                inset 20px 20px 50px rgba(255, 255, 255, 0.6),
+                /* Sisi terang (highlight) */
+                0 0 60px rgba(0, 0, 0, 0.15);
+            filter: saturate(1.2) contrast(1.1);
+            /* Membuat warna bumi lebih hidup dan cerah */
+            animation: spinGlobe 20s linear infinite;
+        }
+
+        /* Lucu Sparkles */
+        .sparkle {
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            background: var(--primary);
+            border-radius: 50%;
+            filter: blur(3px);
+            animation: floatSparkle 3s ease-in-out infinite alternate;
+        }
+
+        .s1 {
+            top: 20px;
+            left: -20px;
+            animation-delay: 0s;
+            width: 12px;
+            height: 12px;
+        }
+
+        .s2 {
+            top: 80px;
+            right: -30px;
+            animation-delay: 1s;
+            width: 20px;
+            height: 20px;
+        }
+
+        .s3 {
+            bottom: 40px;
+            left: -10px;
+            animation-delay: 2s;
+            width: 16px;
+            height: 16px;
+        }
+
+        .intro-footer {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeUp 1s ease-out 1.2s forwards;
+            z-index: 20;
+            pointer-events: auto;
+        }
+
+        .intro-btn {
+            padding: 16px 45px;
+            background: linear-gradient(135deg, #E91E63, #C2185B);
+            /* Deep Pink ber-kontras tinggi */
+            color: white;
+            border: none;
+            border-radius: 40px;
+            font-size: 18px;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 10px 25px rgba(233, 30, 99, 0.4);
+            transition: all 0.3s;
+            font-family: 'Outfit', sans-serif;
+            margin-bottom: 12px;
+            letter-spacing: 0.5px;
+        }
+
+        .intro-btn:hover {
+            transform: scale(1.05) translateY(-3px);
+            box-shadow: 0 15px 30px rgba(233, 30, 99, 0.6);
+            background: linear-gradient(135deg, #D81B60, #AD1457);
+        }
+
+        .intro-author {
+            font-size: 13px;
+            color: var(--text-light);
+            margin: 0;
+            font-weight: 500;
+        }
+
+        @keyframes spinGlobe {
+            0% {
+                background-position: 0 0;
+            }
+
+            100% {
+                background-position: 1024px 0;
+            }
+        }
+
+        @keyframes floatSparkle {
+            to {
+                transform: translateY(-15px) scale(1.2);
+            }
+        }
+
+        @keyframes slideUpGlobe {
+            to {
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeDown {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-out {
+            opacity: 0 !important;
+            pointer-events: none;
+        }
+
+        /* Map and UI */
+        #map {
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+        }
+
+        .ui-panel {
+            position: absolute;
+            top: 20px;
+            left: -420px;
+            /* Hidden initially */
+            width: 380px;
+            /* Slightly wider */
+            bottom: 20px;
+            background: #ffffff;
+            /* Clean white background */
+            background-image:
+                radial-gradient(circle at 10% 15%, #FFB100 4px, transparent 5px),
+                radial-gradient(circle at 85% 5%, #00E676 5px, transparent 6px),
+                radial-gradient(circle at 80% 30%, #2979FF 4px, transparent 5px),
+                radial-gradient(circle at 15% 45%, #FF3366 5px, transparent 6px),
+                radial-gradient(circle at 90% 70%, #FFB100 4px, transparent 5px),
+                radial-gradient(circle at 20% 85%, #00E676 5px, transparent 6px);
+            border-radius: 40px;
+            box-shadow: 15px 15px 45px rgba(27, 46, 124, 0.15);
+            /* Shadow offset changed to right */
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: left 0.8s cubic-bezier(0.25, 1, 0.5, 1);
             z-index: 2000;
         }
 
-        .sidebar-header {
-            padding: 25px 20px;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            color: white;
+        .ui-panel.show {
+            opacity: 1;
+            left: 20px;
+            /* Bring from off-screen */
+            transform: translateX(0);
         }
 
-        .sidebar-header h3 {
+        /* Earth graphic header inside panel */
+        .panel-earth-header {
+            position: relative;
+            height: 250px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .mini-globe {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            background: url('https://upload.wikimedia.org/wikipedia/commons/thumb/2/2d/Meteosat-12-fci-march-equinox-2025-noon.jpg/500px-Meteosat-12-fci-march-equinox-2025-noon.jpg') center/cover;
+            box-shadow:
+                inset -20px -20px 40px rgba(0, 0, 0, 0.4),
+                inset 10px 10px 20px rgba(255, 255, 255, 0.6),
+                0 20px 40px rgba(0, 0, 0, 0.2);
+            animation: floatGlobe 4s ease-in-out infinite;
+        }
+
+        @keyframes floatGlobe {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        .rocket-icon {
+            position: absolute;
+            bottom: 30px;
+            right: 80px;
+            font-size: 50px;
+            filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.2));
+            animation: floatRocket 3s ease-in-out infinite;
+        }
+
+        @keyframes floatRocket {
+
+            0%,
+            100% {
+                transform: translateY(0) rotate(-20deg);
+            }
+
+            50% {
+                transform: translateY(-15px) rotate(-15deg);
+            }
+        }
+
+        .panel-title-section {
+            padding: 0 30px;
+            position: relative;
+            margin-top: -30px;
+            /* pull up */
+            margin-bottom: 20px;
+        }
+
+        .giant-number {
+            font-size: 130px;
+            font-weight: 900;
+            color: #f1f3f5;
+            position: absolute;
+            top: -70px;
+            left: 20px;
+            z-index: 0;
+            letter-spacing: -5px;
             margin: 0;
-            font-size: 18px;
         }
 
-        .sidebar-content {
-            padding: 20px;
+        .title-text {
+            position: relative;
+            z-index: 1;
+        }
+
+        .title-text h2 {
+            font-size: 28px;
+            color: #1B2E7C;
+            margin: 0 0 5px 0;
+            font-weight: 800;
+        }
+
+        .title-text p {
+            font-size: 13px;
+            color: #868e96;
+            line-height: 1.5;
+            margin: 0;
+            font-weight: 500;
+        }
+
+        .panel-content {
+            padding: 0 30px 30px 30px;
             flex: 1;
             overflow-y: auto;
         }
 
-        .stat-card {
-            background: white;
-            padding: 12px;
-            margin-bottom: 8px;
+        .panel-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .panel-content::-webkit-scrollbar-thumb {
+            background: #cbd5e0;
             border-radius: 10px;
-            border: 1px solid var(--border);
+        }
+
+        /* Menu Cards */
+        .menu-card {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 15px 20px;
+            margin-bottom: 15px;
             display: flex;
             align-items: center;
-            gap: 12px;
+            box-shadow: 0 10px 25px rgba(27, 46, 124, 0.05);
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid #f1f3f5;
+        }
+
+        .menu-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(27, 46, 124, 0.1);
+        }
+
+        .icon-box {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 20px;
+            margin-right: 15px;
+            background: #f8f9fa;
+        }
+
+        .menu-text h4 {
+            color: #1B2E7C;
+            margin: 0 0 3px 0;
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .menu-text p {
+            color: #adb5bd;
+            margin: 0;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .menu-arrow {
+            margin-left: auto;
+            background: #FFB100;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(255, 177, 0, 0.3);
+        }
+
+        /* Tab Contents */
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .btn-back {
+            background: #FFF5F7;
+            border: none;
+            color: var(--primary-dark);
+            font-weight: 700;
+            cursor: pointer;
+            padding: 8px 15px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-family: 'Outfit', sans-serif;
+            transition: all 0.2s;
+        }
+
+        .btn-back:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 12px 15px;
+            margin-bottom: 20px;
+            border-radius: 15px;
+            border: 1px solid var(--border);
+            font-family: 'Outfit', sans-serif;
+            font-size: 14px;
+            background: white;
+            outline: none;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.02);
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+
+        .search-box:focus {
+            border-color: var(--primary);
+        }
+
+        #search-results {
+            margin-bottom: 15px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 15px;
+            margin-bottom: 12px;
+            border-radius: 15px;
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.02);
         }
 
         .stat-indicator {
-            width: 4px;
-            height: 30px;
-            border-radius: 2px;
+            width: 8px;
+            height: 40px;
+            border-radius: 4px;
+        }
+
+        .stat-info {
+            flex: 1;
         }
 
         .stat-info span {
             display: block;
-            font-size: 10px;
-            color: #888;
+            font-size: 12px;
+            color: var(--text-light);
+            font-weight: 500;
         }
 
         .stat-info b {
-            font-size: 15px;
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--text-main);
         }
 
-        #map-container {
-            flex: 1;
-            position: relative;
-        }
-
-        #map {
-            height: 100%;
+        .btn-action {
             width: 100%;
+            padding: 15px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 15px;
+            margin-top: 10px;
+            box-shadow: 0 8px 20px rgba(255, 182, 193, 0.4);
+            font-family: 'Outfit', sans-serif;
+            transition: all 0.2s;
         }
 
-        /* LEGENDA */
-        .info.legend {
-            padding: 10px;
+        .btn-action:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        select.modern-select {
+            width: 100%;
+            padding: 12px 15px;
+            border-radius: 15px;
+            border: 1px solid var(--border);
+            outline: none;
+            font-family: 'Outfit', sans-serif;
+            font-size: 14px;
+            color: var(--text-main);
             background: white;
-            background: rgba(255, 255, 255, 0.9);
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
-            border-radius: 8px;
-            line-height: 20px;
-            font-size: 12px;
+            cursor: pointer;
+            box-sizing: border-box;
         }
 
-        .info.legend i {
-            width: 12px;
-            height: 12px;
-            float: left;
-            margin-right: 8px;
-            margin-top: 4px;
-            border-radius: 50%;
+        /* Dark Theme Leaflet Popup Overrides */
+        .leaflet-popup-content-wrapper {
+            border-radius: 20px;
+            background: #1A202C;
+            /* Dark blue/gray */
+            color: #ffffff;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 0;
+            overflow: hidden;
         }
 
-        /* NORTH ARROW - FIX CLICKABLE */
-        .north-arrow-ctrl {
-            background: white;
-            padding: 10px;
+        .leaflet-popup-tip {
+            background: #1A202C;
+        }
+
+        .leaflet-popup-content {
+            font-family: 'Outfit', sans-serif;
+            margin: 0;
+            width: 320px !important;
+        }
+
+        .leaflet-container a.leaflet-popup-close-button {
+            color: #ffffff;
+            top: 10px;
+            right: 10px;
+            font-weight: 400;
+            background: rgba(0, 0, 0, 0.4);
             border-radius: 50%;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
-            cursor: pointer !important;
-            pointer-events: auto !important;
-            /* Supaya bisa diklik */
-            transition: all 0.2s ease;
+            width: 24px;
+            height: 24px;
+            line-height: 24px;
+            text-align: center;
+        }
+
+        /* Popup Internal Structure */
+        .popup-image {
+            width: 100%;
+            height: 130px;
+            background-size: cover;
+            background-position: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .popup-header {
+            padding: 20px 20px 15px 20px;
             display: flex;
             align-items: center;
+            gap: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .popup-icon-wrapper {
+            background: rgba(255, 255, 255, 0.1);
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
             justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .popup-title h3 {
+            margin: 0 0 5px 0;
+            font-size: 16px;
+            color: #ffffff;
+            font-weight: 700;
+            line-height: 1.3;
+        }
+
+        .popup-badge {
+            display: inline-block;
+            background: rgba(41, 121, 255, 0.2);
+            color: #66b2ff;
+            font-size: 10px;
+            font-weight: 800;
+            padding: 4px 8px;
+            border-radius: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .popup-body {
+            padding: 15px 20px;
+        }
+
+        .popup-desc {
+            font-size: 12px;
+            color: #cbd5e0;
+            margin-bottom: 15px;
+            line-height: 1.5;
+            font-style: italic;
+        }
+
+        .popup-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 13px;
+        }
+
+        .popup-label {
+            color: #a0aec0;
+        }
+
+        .popup-val {
+            color: #ffffff;
+            font-weight: 600;
+            text-align: right;
+            max-width: 60%;
+        }
+
+        .popup-btn {
+            display: block;
+            width: calc(100% - 40px);
+            margin: 0 20px 20px 20px;
+            padding: 10px;
+            text-align: center;
+            background: transparent;
+            color: #66b2ff;
+            border: 1px solid rgba(41, 121, 255, 0.5);
+            border-radius: 20px;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .popup-btn:hover {
+            background: rgba(41, 121, 255, 0.1);
+            color: #ffffff;
+        }
+
+        .leaflet-control-layers {
+            border-radius: 15px !important;
+            border: none !important;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .info.legend {
+            background: rgba(255, 255, 255, 0.9) !important;
+            border-radius: 15px !important;
+            padding: 15px !important;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .north-arrow-ctrl {
+            background: white;
+            padding: 12px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: all 0.2s ease;
         }
 
         .north-arrow-ctrl:hover {
             transform: scale(1.1);
-            background: #f0f0f0;
             border: 2px solid var(--primary);
         }
 
         #loading-overlay {
             position: absolute;
             inset: 0;
-            background: white;
+            background: rgba(255, 255, 255, 0.9);
             z-index: 3000;
             display: flex;
             justify-content: center;
             align-items: center;
             flex-direction: column;
-        }
-
-        .btn-fit {
-            width: 100%;
-            padding: 12px;
-            background: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            margin-top: 10px;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            color: var(--primary);
+            font-size: 18px;
         }
     </style>
 </head>
 
 <body>
-    <aside id="sidebar">
-        <div class="sidebar-header">
-            <h3>Peta Tematik Petaling</h3>
-            <p>Sistem Informasi Geografis</p>
-        </div>
-        <div class="sidebar-content">
-            <input type="text" id="search"
-                style="width:100%; padding:10px; margin-bottom:15px; border-radius:8px; border:1px solid #ddd;"
-                placeholder="Cari fasilitas...">
-            <div id="search-results"></div>
-            <h4>STATISTIK DATA</h4>
-            <div class="stat-card">
-                <div class="stat-indicator" style="background: var(--edu)"></div>
-                <div class="stat-info"><span>Pendidikan</span><b id="count-edu">0</b></div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-indicator" style="background: var(--health)"></div>
-                <div class="stat-info"><span>Kesehatan</span><b id="count-health">0</b></div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-indicator" style="background: var(--fin)"></div>
-                <div class="stat-info"><span>Finansial</span><b id="count-fin">0</b></div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-indicator" style="background: var(--loc)"></div>
-                <div class="stat-info"><span>Lokalitas (Area)</span><b id="count-loc">0</b></div>
-            </div>
-            <button class="btn-fit" onclick="fitMap()">Reset Tampilan Peta</button>
-            <div style="font-size: 10px; color: #999; margin-top: 20px; text-align: center;">
-                <b>Qaisya Aulia Maharani</b><br>Tugas 2 Web GIS
-            </div>
-        </div>
-    </aside>
 
-    <main id="map-container">
-        <div id="loading-overlay">
-            <p>Sinkronisasi Data...</p>
+    <!-- Intro Screen -->
+    <div id="intro-screen">
+        <h1 class="intro-title">Peta Sebaran Fasilitas Pendidikan<br><span class="highlight">Petaling, Selangor,
+                Malaysia</span></h1>
+
+        <div class="globe-container">
+            <div class="globe-wrapper">
+                <div class="globe"></div>
+
+                <div class="orbit-ring" id="orbit-ring">
+                    <div class="orbit-item item1" onclick="togglePhoto(this)">
+                        <div class="photo"
+                            style="background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/f/f5/Sunway_Pyramid_front.jpg/500px-Sunway_Pyramid_front.jpg')">
+                        </div>
+                        <div class="info">
+                            <h4>Sunway Pyramid</h4>
+                            <p>Pusat belanja bergaya Mesir</p>
+                        </div>
+                    </div>
+                    <div class="orbit-item item2" onclick="togglePhoto(this)">
+                        <div class="photo"
+                            style="background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/3/31/East_view_of_Jalan_PJU_7-3_in_Mutiara_Damansara%2C_Selangor_20250427_131634.jpg/500px-East_view_of_Jalan_PJU_7-3_in_Mutiara_Damansara%2C_Selangor_20250427_131634.jpg')">
+                        </div>
+                        <div class="info">
+                            <h4>Mutiara Damansara</h4>
+                            <p>Destinasi ritel komersial</p>
+                        </div>
+                    </div>
+                    <div class="orbit-item item3" onclick="togglePhoto(this)">
+                        <div class="photo"
+                            style="background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/1_Utama_Shopping_Centre.jpg/500px-1_Utama_Shopping_Centre.jpg')">
+                        </div>
+                        <div class="info">
+                            <h4>1 Utama</h4>
+                            <p>Pusat hiburan modern</p>
+                        </div>
+                    </div>
+                    <div class="orbit-item item4" onclick="togglePhoto(this)">
+                        <div class="photo"
+                            style="background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Subang_Jaya_at_Dusk.jpg/500px-Subang_Jaya_at_Dusk.jpg')">
+                        </div>
+                        <div class="info">
+                            <h4>Subang Jaya</h4>
+                            <p>Kota satelit tersibuk</p>
+                        </div>
+                    </div>
+                    <div class="orbit-item item5" onclick="togglePhoto(this)">
+                        <div class="photo"
+                            style="background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Damansara_Uptown_%28220115%29.jpg/500px-Damansara_Uptown_%28220115%29.jpg')">
+                        </div>
+                        <div class="info">
+                            <h4>Damansara Uptown</h4>
+                            <p>Kawasan elit komersial</p>
+                        </div>
+                    </div>
+                    <div class="orbit-item item6" onclick="togglePhoto(this)">
+                        <div class="photo"
+                            style="background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/a/ae/Section_17_PJ_4.jpg/500px-Section_17_PJ_4.jpg')">
+                        </div>
+                        <div class="info">
+                            <h4>Petaling Jaya</h4>
+                            <p>Pusat ekonomi kreatif</p>
+                        </div>
+                    </div>
+                    <div class="orbit-item item7" onclick="togglePhoto(this)">
+                        <div class="photo"
+                            style="background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/d/db/Petaling_Jaya_City_Council.JPG/500px-Petaling_Jaya_City_Council.JPG')">
+                        </div>
+                        <div class="info">
+                            <h4>MBPJ Tower</h4>
+                            <p>Landmark pemerintahan daerah</p>
+                        </div>
+                    </div>
+                    <div class="orbit-item item8" onclick="togglePhoto(this)">
+                        <div class="photo"
+                            style="background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/d/d2/Jalan_Camar_4-5%2C_Seksyen_4_Kota_Damansara_20250412_123900.jpg/500px-Jalan_Camar_4-5%2C_Seksyen_4_Kota_Damansara_20250412_123900.jpg')">
+                        </div>
+                        <div class="info">
+                            <h4>Kota Damansara</h4>
+                            <p>Kawasan hunian mandiri</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sparkle s1"></div>
+            <div class="sparkle s2"></div>
+            <div class="sparkle s3"></div>
         </div>
-        <div id="map"></div>
-    </main>
+
+        <div class="intro-footer">
+            <button class="intro-btn" onclick="startApp()">Jelajahi Peta</button>
+            <p class="intro-author">Dibuat oleh Qaisya Aulia Maharani</p>
+        </div>
+    </div>
+
+    <!-- Cloud Transition Overlay -->
+    <div id="cloud-transition">
+        <div class="cloud-part c1"></div>
+        <div class="cloud-part c2"></div>
+        <div class="cloud-part c3"></div>
+        <div class="cloud-part c4"></div>
+        <div class="cloud-part c5"></div>
+    </div>
+
+    <!-- Map Container -->
+    <div id="map"></div>
+
+    <!-- Floating UI Panel -->
+    <div class="ui-panel" id="ui-panel">
+        <div id="loading-overlay">Memuat Data...</div>
+
+        <div class="panel-earth-header">
+            <div class="mini-globe"></div>
+            <div class="rocket-icon">🚀</div>
+        </div>
+
+        <div class="panel-title-section">
+            <h1 class="giant-number">E</h1>
+            <div class="title-text">
+                <h2>Edukasi Bumi</h2>
+                <p>Data penyebaran fasilitas pendidikan dan lainnya di wilayah Petaling.</p>
+            </div>
+        </div>
+
+        <div class="panel-content">
+            <!-- Main Menu -->
+            <div id="menu-utama">
+                <div class="menu-card" onclick="openTab('statistik')">
+                    <div class="icon-box" style="background:#E3F2FD;">📊</div>
+                    <div class="menu-text">
+                        <h4>Statistik Data</h4>
+                        <p>Lihat detail fasilitas</p>
+                    </div>
+                    <div class="menu-arrow">&rarr;</div>
+                </div>
+                <div class="menu-card" onclick="openTab('analitik')">
+                    <div class="icon-box" style="background:#F3E5F5;">📈</div>
+                    <div class="menu-text">
+                        <h4>Analitik Visual</h4>
+                        <p>Diagram komposisi</p>
+                    </div>
+                    <div class="menu-arrow">&rarr;</div>
+                </div>
+                <div class="menu-card" onclick="openTab('heatmap')">
+                    <div class="icon-box" style="background:#FFF3E0;">🔥</div>
+                    <div class="menu-text">
+                        <h4>Heatmap Kepadatan</h4>
+                        <p>Peta sebaran lokasi</p>
+                    </div>
+                    <div class="menu-arrow">&rarr;</div>
+                </div>
+            </div>
+
+            <!-- Tab: Statistik -->
+            <div class="tab-content" id="tab-statistik">
+                <button class="btn-back" onclick="closeTab()">&larr; Kembali</button>
+
+                <input type="text" id="search" class="search-box" placeholder="Cari nama fasilitas...">
+                <div id="search-results"></div>
+
+                <div class="stat-card">
+                    <div style="display:flex; align-items:center; gap:15px; width: 100%;">
+                        <div class="stat-indicator" style="background: var(--edu)"></div>
+                        <div class="stat-info"><span>Pendidikan</span><b id="count-edu">0</b></div>
+                    </div>
+                    <select id="filter-education" class="modern-select"
+                        style="margin-top: 10px; padding: 8px 10px; font-size: 12px;"
+                        onchange="filterMap('education', this.value)">
+                        <option value="">Semua Sub-Kategori</option>
+                    </select>
+                </div>
+                <div class="stat-card">
+                    <div style="display:flex; align-items:center; gap:15px; width: 100%;">
+                        <div class="stat-indicator" style="background: var(--health)"></div>
+                        <div class="stat-info"><span>Kesehatan</span><b id="count-health">0</b></div>
+                    </div>
+                    <select id="filter-healthcare" class="modern-select"
+                        style="margin-top: 10px; padding: 8px 10px; font-size: 12px;"
+                        onchange="filterMap('healthcare', this.value)">
+                        <option value="">Semua Sub-Kategori</option>
+                    </select>
+                </div>
+                <div class="stat-card">
+                    <div style="display:flex; align-items:center; gap:15px; width: 100%;">
+                        <div class="stat-indicator" style="background: var(--fin)"></div>
+                        <div class="stat-info"><span>Finansial</span><b id="count-fin">0</b></div>
+                    </div>
+                    <select id="filter-financial" class="modern-select"
+                        style="margin-top: 10px; padding: 8px 10px; font-size: 12px;"
+                        onchange="filterMap('financial', this.value)">
+                        <option value="">Semua Sub-Kategori</option>
+                    </select>
+                </div>
+                <div class="stat-card">
+                    <div style="display:flex; align-items:center; gap:15px; width: 100%;">
+                        <div class="stat-indicator" style="background: var(--loc)"></div>
+                        <div class="stat-info"><span>Lokalitas (Area)</span><b id="count-loc">0</b></div>
+                    </div>
+                    <select id="filter-localities" class="modern-select"
+                        style="margin-top: 10px; padding: 8px 10px; font-size: 12px;"
+                        onchange="filterMap('localities', this.value)">
+                        <option value="">Semua Sub-Kategori</option>
+                    </select>
+                </div>
+
+                <button class="btn-action" onclick="fitMap()">Reset Tampilan Peta</button>
+            </div>
+
+            <!-- Tab: Analitik -->
+            <div class="tab-content" id="tab-analitik">
+                <button class="btn-back" onclick="closeTab()">&larr; Kembali</button>
+                <h3 style="margin-top:0; color: var(--text-main);">Komposisi Fasilitas</h3>
+                <canvas id="chart-analitik" width="400" height="400" style="margin-top: 10px;"></canvas>
+            </div>
+
+            <!-- Tab: Heatmap -->
+            <div class="tab-content" id="tab-heatmap">
+                <button class="btn-back" onclick="closeTab()">&larr; Kembali</button>
+                <h3 style="margin-top:0; color: var(--text-main);">Kepadatan Lokasi</h3>
+                <p style="font-size: 13px; color: var(--text-light); margin-bottom: 15px;">Pilih kategori fasilitas
+                    untuk melihat tingkat kepadatan pada peta.</p>
+                <select id="heatmap-select" class="modern-select" onchange="updateHeatmap()">
+                    <option value="">-- Pilih Kategori --</option>
+                    <option value="education">Pendidikan</option>
+                    <option value="healthcare">Kesehatan</option>
+                    <option value="financial">Finansial</option>
+                </select>
+            </div>
+        </div>
+    </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
     <script>
+        // Intro Screen Logic
+        // Intro Cinematic Transition Logic
+        function startApp() {
+            // 1. Sembunyikan teks intro
+            document.querySelector('.intro-title').classList.add('fade-out');
+            document.querySelector('.intro-footer').classList.add('fade-out');
+
+            // 2. Efek Zoom In masuk ke bumi secara drastis
+            const globeWrapper = document.querySelector('.globe-wrapper');
+            globeWrapper.style.transition = 'all 1.5s cubic-bezier(0.6, 0.05, 0.8, 0.5)';
+            globeWrapper.style.transform = 'scale(25) translateZ(200px) translateY(10px)';
+
+            // 3. Panggil awan tebal untuk menutupi layar putih (Transisi masuk)
+            setTimeout(() => {
+                const clouds = document.getElementById('cloud-transition');
+                clouds.style.visibility = 'visible';
+                clouds.classList.add('engulf');
+
+                // 4. Setelah layar tertutup putih sepenuhnya
+                setTimeout(() => {
+                    // Hapus layar intro dari belakang
+                    document.getElementById('intro-screen').style.display = 'none';
+                    // Tampilkan UI Dashboard dan Peta (masih tertutup awan)
+                    document.getElementById('ui-panel').classList.add('show');
+
+                    // 5. Buka awannya (efek awan memudar dan membesar menghilang)
+                    clouds.classList.remove('engulf');
+                    clouds.classList.add('open-up');
+
+                    // 6. Bersihkan memori transisi awan
+                    setTimeout(() => {
+                        clouds.style.display = 'none';
+                    }, 1500);
+
+                }, 1200); // Tunggu sampai awan selesai menutupi layar
+            }, 500); // Awan mulai menutupi sedikit setelah bumi mendekat
+        }
+
+        // Basemap modern minimalis (CartoDB Voyager - sangat cerah dan cocok dengan tema pastel)
         const map = L.map('map', { zoomControl: false }).setView([3.126, 101.59], 12);
         L.control.zoom({ position: 'topright' }).addTo(map);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+        }).addTo(map);
 
         const layers = { border: L.layerGroup(), education: L.layerGroup(), healthcare: L.layerGroup(), financial: L.layerGroup(), localities: L.layerGroup() };
-        const COLORS = { education: '#2196F3', healthcare: '#F44336', financial: '#4CAF50', localities: '#FF9800' };
+
+        // Colors updated for high contrast (vibrant) on the dashboard map
+        const COLORS = { education: '#E91E63', healthcare: '#6200EA', financial: '#00C853', localities: '#FF6D00' };
         const LABELS = { education: 'Pendidikan', healthcare: 'Kesehatan', financial: 'Finansial', localities: 'Lokalitas' };
+
         let searchIndex = [];
+        let counts = { education: 0, healthcare: 0, financial: 0, localities: 0 };
+        let heatmapPoints = { education: [], healthcare: [], financial: [] };
+
+        let allFeatures = { border: [], education: [], healthcare: [], financial: [], localities: [] };
+        let subCategories = { education: new Set(), healthcare: new Set(), financial: new Set(), localities: new Set() };
+
+        function getGeoJsonOptions(cat, isInitial) {
+            return {
+                style: () => {
+                    if (cat === 'border') return { color: '#2D3748', weight: 2.5, dashArray: '6, 8', fillOpacity: 0, interactive: false };
+                    return { color: COLORS[cat], weight: 2, fillOpacity: cat === 'localities' ? 0.2 : 0.9, fillColor: COLORS[cat] };
+                },
+                pointToLayer: (f, latlng) => {
+                    if (cat === 'border') return null;
+                    return L.circleMarker(latlng, { radius: 6, fillColor: COLORS[cat], color: "#fff", weight: 2, fillOpacity: 1 });
+                },
+                onEachFeature: (f, layer) => {
+                    if (cat === 'border') return;
+                    const p = f.properties;
+                    const name = p.name || p.amenity || "Fasilitas Tanpa Nama";
+                    const osmId = p["@id"] ? p["@id"].replace(/^(node\/|way\/|relation\/)/, '') : (p.id || "-");
+                    const geomType = f.geometry.type;
+                    const osmType = p["@id"] ? p["@id"].split('/')[0] : "node";
+
+                    let icon = "📍";
+                    if (cat === 'education') icon = "🏫";
+                    else if (cat === 'healthcare') icon = "🏥";
+                    else if (cat === 'financial') icon = "🏦";
+
+                    let desc = `"${name} merupakan salah satu lokasi ${LABELS[cat].toLowerCase()} yang dipetakan di wilayah Petaling.`;
+                    if (p['addr:street']) desc += ` Terletak di kawasan ${p['addr:street']}.`;
+                    if (p.operator) desc += ` Dikelola atau dioperasikan oleh ${p.operator}.`;
+                    desc += `"`;
+
+                    const osmLink = `https://www.openstreetmap.org/${osmType}/${osmId}`;
+
+                    let extraDataHtml = "";
+                    const extraFields = [
+                        { key: 'addr:street', label: 'Jalan' },
+                        { key: 'addr:city', label: 'Kota' },
+                        { key: 'addr:postcode', label: 'Kode Pos' },
+                        { key: 'operator', label: 'Pengelola' },
+                        { key: 'phone', label: 'Telepon' },
+                        { key: 'opening_hours', label: 'Jam Buka' },
+                        { key: 'amenity', label: 'Sub-Kategori' },
+                        { key: 'capacity', label: 'Kapasitas' },
+                        { key: 'isced:level', label: 'ISCED Level' }
+                    ];
+
+                    extraFields.forEach(field => {
+                        if (p[field.key]) {
+                            extraDataHtml += `
+                            <div class="popup-row">
+                                <span class="popup-label">${field.label}</span>
+                                <span class="popup-val">${p[field.key]}</span>
+                            </div>`;
+                        }
+                    });
+
+                    const popupHtml = `
+                        <div class="popup-header">
+                            <div class="popup-icon-wrapper">${icon}</div>
+                            <div class="popup-title">
+                                <h3>${name}</h3>
+                                <div class="popup-badge">${LABELS[cat]}</div>
+                            </div>
+                        </div>
+                        <div class="popup-body">
+                            <div class="popup-desc">${desc}</div>
+                            <div class="popup-row">
+                                <span class="popup-label">OSM ID</span>
+                                <span class="popup-val">${osmId}</span>
+                            </div>
+                            <div class="popup-row">
+                                <span class="popup-label">Tipe Data</span>
+                                <span class="popup-val">${geomType === 'Point' ? 'Titik (Node)' : 'Poligon (Way)'}</span>
+                            </div>
+                            <div class="popup-row">
+                                <span class="popup-label">Geometri</span>
+                                <span class="popup-val">${geomType}</span>
+                            </div>
+                            ${extraDataHtml}
+                        </div>
+                        <a href="${osmLink}" target="_blank" class="popup-btn">🔗 Lihat di OpenStreetMap</a>
+                    `;
+                    layer.bindPopup(popupHtml);
+
+                    if (isInitial) {
+                        searchIndex.push({ name: String(name), layer, cat: LABELS[cat] });
+
+                        if (['education', 'healthcare', 'financial'].includes(cat)) {
+                            let center;
+                            if (layer.getBounds) {
+                                center = layer.getBounds().getCenter();
+                            } else if (layer.getLatLng) {
+                                center = layer.getLatLng();
+                            }
+                            if (center) {
+                                heatmapPoints[cat].push([center.lat, center.lng, 1]);
+                            }
+                        }
+                    }
+                }
+            };
+        }
+
+        function renderLayer(cat, features, isInitial = false) {
+            layers[cat].clearLayers();
+            L.geoJSON({ type: "FeatureCollection", features: features }, getGeoJsonOptions(cat, isInitial)).addTo(layers[cat]);
+            layers[cat].addTo(map);
+        }
+
+        function filterMap(cat, subCat) {
+            let filteredData = allFeatures[cat];
+            if (subCat !== "") {
+                filteredData = allFeatures[cat].filter(f => {
+                    const sub = f.properties.amenity || f.properties.place || f.properties.shop || f.properties.office || f.properties.leisure || "Lainnya";
+                    return sub === subCat;
+                });
+            }
+            renderLayer(cat, filteredData, false);
+
+            const id = { education: 'edu', healthcare: 'health', financial: 'fin', localities: 'loc' }[cat];
+            document.getElementById(`count-${id}`).innerText = filteredData.length;
+        }
 
         async function loadData(cat, path) {
             try {
@@ -215,46 +1393,33 @@
                 if (!response.ok) throw new Error("File tidak ditemukan");
                 const data = await response.json();
 
+                allFeatures[cat] = data.features;
+
                 if (cat !== 'border') {
                     const id = { education: 'edu', healthcare: 'health', financial: 'fin', localities: 'loc' }[cat];
+                    counts[cat] = data.features.length;
                     document.getElementById(`count-${id}`).innerText = data.features.length;
+
+                    data.features.forEach(f => {
+                        const sub = f.properties.amenity || f.properties.place || f.properties.shop || f.properties.office || f.properties.leisure || "Lainnya";
+                        subCategories[cat].add(sub);
+                    });
+
+                    const select = document.getElementById(`filter-${cat}`);
+                    if (select) {
+                        Array.from(subCategories[cat]).sort().forEach(sub => {
+                            const opt = document.createElement('option');
+                            opt.value = sub;
+                            opt.textContent = sub;
+                            select.appendChild(opt);
+                        });
+                    }
                 }
 
-                L.geoJSON(data, {
-                    style: () => {
-                        if (cat === 'border') {
-                            return {
-                                color: '#000000', // Hitam
-                                weight: 2.5,
-                                dashArray: '5, 8', // Garis titik-titik (putus-putus)
-                                fillOpacity: 0, // Dalamnya kosong
-                                interactive: false
-                            };
-                        }
-                        return {
-                            color: COLORS[cat],
-                            weight: 2,
-                            fillOpacity: cat === 'localities' ? 0.3 : 0.9,
-                            fillColor: COLORS[cat]
-                        };
-                    },
-                    pointToLayer: (f, latlng) => {
-                        if (cat === 'border') return null;
-                        return L.circleMarker(latlng, { radius: 6, fillColor: COLORS[cat], color: "#fff", weight: 1, fillOpacity: 0.9 });
-                    },
-                    onEachFeature: (f, layer) => {
-                        if (cat === 'border') return;
-                        const p = f.properties;
-                        const name = p.name || p.amenity || "Fasilitas";
-                        layer.bindPopup(`<b style="color:${COLORS[cat]}">${LABELS[cat]}</b><br><b>${name}</b>`);
-                        searchIndex.push({ name: String(name), layer, cat: LABELS[cat] });
-                    }
-                }).addTo(layers[cat]);
-                layers[cat].addTo(map);
+                renderLayer(cat, data.features, true);
             } catch (e) { console.error("Gagal muat " + cat, e); }
         }
 
-        // --- PATH FILE (Pastikan Huruf Besar/Kecil Sama Dengan Nama Foldermu) ---
         Promise.all([
             loadData('border', 'localities%20petaling/clipping_boundary.geojson'),
             loadData('education', 'education/education.geojson'),
@@ -271,33 +1436,40 @@
                 "Lokalitas": layers.localities
             }, { collapsed: false, position: 'topright' }).addTo(map);
 
-            // Pastikan border di paling belakang agar tidak menutupi klik marker
             layers.border.eachLayer(l => l.bringToBack());
             fitMap();
+            initChart();
         });
 
         // LEGENDA
         const legend = L.control({ position: 'bottomright' });
         legend.onAdd = function () {
             const div = L.DomUtil.create('div', 'info legend');
-            div.innerHTML = '<b>Legenda</b><br>';
-            for (let key in COLORS) { div.innerHTML += `<i style="background:${COLORS[key]}"></i>${LABELS[key]}<br>`; }
+            div.innerHTML = '<b style="color:#2D3748; margin-bottom:10px; display:block; font-size:14px;">Legenda</b>';
+            for (let key in COLORS) {
+                div.innerHTML += `<div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+                    <i style="background:${COLORS[key]}; width:14px; height:14px; border-radius:50%; display:inline-block; box-shadow:0 2px 5px rgba(0,0,0,0.1);"></i>
+                    <span style="color:#718096; font-size:13px; font-weight:600;">${LABELS[key]}</span>
+                </div>`;
+            }
             return div;
         };
         legend.addTo(map);
 
-        // NORTH ARROW (RESET VIEW BUTTON)
-        const north = L.control({ position: 'bottomleft' });
+        // NORTH ARROW / RESET VIEW
+        const north = L.control({ position: 'bottomright' });
         north.onAdd = function () {
             const div = L.DomUtil.create('div', 'north-arrow-ctrl');
-            div.innerHTML = '<img src="https://cdn-icons-png.flaticon.com/512/2619/2619335.png" width="30" title="Reset Tampilan">';
-
-            // Event Click Langsung
-            L.DomEvent.disableClickPropagation(div); // Penting agar tidak nembus ke peta
-            div.onclick = function () {
-                console.log("Resetting view...");
-                fitMap();
-            };
+            div.innerHTML = `
+                <div style="display:flex; flex-direction:column; align-items:center; color:#2D3748; font-weight:900; font-size:12px; line-height:1;" title="Reset Tampilan (Arah Utara)">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:2px;">
+                        <path d="M12 19V5M5 12l7-7 7 7"/>
+                    </svg>
+                    N
+                </div>
+            `;
+            L.DomEvent.disableClickPropagation(div);
+            div.onclick = fitMap;
             return div;
         };
         north.addTo(map);
@@ -325,12 +1497,85 @@
             if (val.length < 2) return;
             searchIndex.filter(i => i.name.toLowerCase().includes(val)).slice(0, 5).forEach(m => {
                 const d = document.createElement('div');
-                d.style = "padding:8px; cursor:pointer; border-bottom:1px solid #eee; font-size:12px; background:white;";
-                d.innerHTML = `<b>${m.name}</b><br><small>${m.cat}</small>`;
-                d.onclick = () => { m.layer.openPopup(); map.setView(m.layer.getLatLng ? m.layer.getLatLng() : m.layer.getBounds().getCenter(), 15); };
+                d.style = "padding:12px 15px; cursor:pointer; border-bottom:1px solid #edf2f7; font-size:13px; background:white; border-radius:12px; margin-bottom:8px; box-shadow:0 2px 8px rgba(0,0,0,0.03); transition:all 0.2s;";
+                d.onmouseover = () => d.style.transform = 'translateY(-2px)';
+                d.onmouseout = () => d.style.transform = 'translateY(0)';
+                d.innerHTML = `<b style="color:#2D3748; font-size:14px;">${m.name}</b><br><small style="color:var(--primary); font-weight:700;">${m.cat}</small>`;
+                d.onclick = () => { m.layer.openPopup(); map.setView(m.layer.getLatLng ? m.layer.getLatLng() : m.layer.getBounds().getCenter(), 16); };
                 res.appendChild(d);
             });
         });
+
+        // Tab Navigation
+        function openTab(tabId) {
+            document.getElementById('menu-utama').style.display = 'none';
+            document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+            document.getElementById('tab-' + tabId).style.display = 'block';
+        }
+
+        function closeTab() {
+            document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+            document.getElementById('menu-utama').style.display = 'block';
+
+            document.getElementById('heatmap-select').value = "";
+            updateHeatmap();
+        }
+
+        // Initialize Chart.js
+        function initChart() {
+            const ctx = document.getElementById('chart-analitik').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Pendidikan', 'Kesehatan', 'Finansial'],
+                    datasets: [{
+                        data: [counts.education, counts.healthcare, counts.financial],
+                        backgroundColor: [COLORS.education, COLORS.healthcare, COLORS.financial],
+                        borderWidth: 0,
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    cutout: '70%',
+                    plugins: {
+                        legend: { position: 'bottom', labels: { font: { family: 'Outfit', size: 13, weight: '500' } } }
+                    }
+                }
+            });
+        }
+
+        // Heatmap Logic
+        let heatLayer = null;
+        function updateHeatmap() {
+            const cat = document.getElementById('heatmap-select').value;
+            if (heatLayer) {
+                map.removeLayer(heatLayer);
+                heatLayer = null;
+            }
+            if (cat && heatmapPoints[cat] && heatmapPoints[cat].length > 0) {
+                // Gradient kembali ke warna heatmap standar
+                heatLayer = L.heatLayer(heatmapPoints[cat], {
+                    radius: 25,
+                    blur: 15,
+                    maxZoom: 14,
+                    gradient: { 0.4: 'blue', 0.6: 'cyan', 0.7: 'lime', 0.8: 'yellow', 1.0: 'red' }
+                }).addTo(map);
+            }
+        }
+        function togglePhoto(el) {
+            const ring = document.getElementById('orbit-ring');
+            const isExpanded = el.classList.contains('expanded');
+
+            document.querySelectorAll('.orbit-item').forEach(item => item.classList.remove('expanded'));
+
+            if (!isExpanded) {
+                el.classList.add('expanded');
+                ring.style.animationPlayState = 'paused';
+            } else {
+                ring.style.animationPlayState = 'running';
+            }
+        }
     </script>
 </body>
 
